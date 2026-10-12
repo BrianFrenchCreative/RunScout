@@ -1,5 +1,5 @@
 /**
- * PS Store Scout - Popup Logic
+ * RunScout - Popup Logic
  * 
  * Features:
  * - Segmented tabs: "Saved Games", "Untouched", and "Hidden Games"
@@ -1081,7 +1081,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const downloadLink = document.createElement('a');
         downloadLink.href = url;
         const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-') + 'Z';
-        downloadLink.download = `PS_Store_Scout_Backup_${timestamp}.json`;
+        downloadLink.download = `RunScout_Backup_${timestamp}.json`;
         document.body.appendChild(downloadLink);
         downloadLink.click();
         document.body.removeChild(downloadLink);

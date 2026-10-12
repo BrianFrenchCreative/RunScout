@@ -1,5 +1,5 @@
 /**
- * PlayStation Store Game Hider - Background Service Worker
+ * RunScout - Background Service Worker
  *
  * Manages tab-specific side panel activation:
  * - Enables side panel and toolbar action exclusively on store.playstation.com tabs
@@ -8,6 +8,7 @@
  */
 
 const PS_STORE_HOST = 'store.playstation.com';
+const DRY_RUN = false;
 
 // Configure the side panel to open when clicking the toolbar action icon
 chrome.sidePanel
@@ -94,19 +95,89 @@ chrome.runtime.onInstalled.addListener(() => {
 });
 
 /**
- * Speedrun.com API Autonomous Rolling-Window Rate Limiter & Fetch Handler:
- * 1. Enforces a minimum spacing of 1400ms between ANY two requests to prevent Cloudflare WAF burst 429 blocks (Error 1015).
- * 2. Enforces a strict rolling 60-second window cap of 40 requests/min (leaving a 60% safety buffer below the 100/min ceiling).
- * 3. Handles reactive 429 backoff gracefully with synchronized cooldown locking across all queues.
+ * Speedrun.com Official API Compliance & Autonomous Rate Limiting:
+ * 1. DeclarativeNetRequest injects optional X-API-Key (browser default User-Agent preserved).
+ * 2. If Speedrun.com API key is provided: 28 req/min, 2000ms spacing, 7-call burst breather (5s).
+ * 3. If unauthenticated: Safe 6 req/min ceiling, 4000ms spacing, 4-call burst breather (8s).
+ * 4. Never sends `&_bulk=yes` on title lookups.
  */
-const MIN_REQUEST_INTERVAL_MS = 2000;
-const MAX_REQUESTS_PER_MINUTE = 25;
+
+let currentSpeedrunApiKey = '';
+
+function getEffectiveRateLimits() {
+  if (currentSpeedrunApiKey) {
+    return {
+      minIntervalMs: 2000,
+      maxPerMinute: 28,
+      breatherThreshold: 7,
+      breatherDurationMs: 5000,
+      isAuthenticated: true
+    };
+  }
+  return {
+    minIntervalMs: 4000,
+    maxPerMinute: 6,
+    breatherThreshold: 4,
+    breatherDurationMs: 8000,
+    isAuthenticated: false
+  };
+}
+
+async function updateDeclarativeNetRules(apiKey = '') {
+  if (!chrome.declarativeNetRequest) return;
+  try {
+    const rulesToAdd = [];
+
+    if (apiKey && typeof apiKey === 'string' && apiKey.trim()) {
+      rulesToAdd.push({
+        id: 1002,
+        priority: 1,
+        action: {
+          type: 'modifyHeaders',
+          requestHeaders: [
+            {
+              header: 'X-API-Key',
+              operation: 'set',
+              value: apiKey.trim()
+            }
+          ]
+        },
+        condition: {
+          urlFilter: '||speedrun.com/api/',
+          resourceTypes: ['main_frame', 'sub_frame', 'xmlhttprequest', 'other']
+        }
+      });
+    }
+
+    await chrome.declarativeNetRequest.updateDynamicRules({
+      removeRuleIds: [1001, 1002],
+      addRules: rulesToAdd
+    });
+    console.log('[RunScout] DeclarativeNetRequest rules updated (API Key present:', Boolean(apiKey), ')');
+  } catch (err) {
+    console.warn('[RunScout] Error registering declarativeNetRequest rules:', err);
+  }
+}
+
+// Initialize API key and rules from storage
+chrome.storage.local.get({ speedrunApiKey: '' }, (res) => {
+  currentSpeedrunApiKey = (res && typeof res.speedrunApiKey === 'string') ? res.speedrunApiKey.trim() : '';
+  updateDeclarativeNetRules(currentSpeedrunApiKey);
+});
+
+// Reactively update when user changes API key in Settings
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && changes.speedrunApiKey) {
+    currentSpeedrunApiKey = typeof changes.speedrunApiKey.newValue === 'string' ? changes.speedrunApiKey.newValue.trim() : '';
+    updateDeclarativeNetRules(currentSpeedrunApiKey);
+    broadcastHeatUpdate();
+  }
+});
+
 let lastRequestTimestamp = 0;
 let requestTimestamps = [];
 let cooldownUntilTimestamp = 0;
 let consecutiveCallCount = 0;
-const BURST_BREATHER_THRESHOLD = 8;
-const BURST_BREATHER_DURATION_MS = 6000;
 let fetchQueuePromise = Promise.resolve();
 
 // Initialize timestamps from storage if present
@@ -251,11 +322,13 @@ function broadcastRateLimitStatus(status) {
 function broadcastHeatUpdate() {
   cleanupRequestTimestamps();
   const count = requestTimestamps.length;
+  const limits = getEffectiveRateLimits();
   try {
     chrome.runtime.sendMessage({
       action: 'API_HEAT_UPDATE',
       count,
-      max: MAX_REQUESTS_PER_MINUTE
+      max: limits.maxPerMinute,
+      hasApiKey: limits.isAuthenticated
     }).catch(() => {});
   } catch (e) {}
 }
@@ -263,12 +336,13 @@ function broadcastHeatUpdate() {
 /**
  * Smart Rate Limiter Slot Reservation:
  * 1. Enforces active 429 / WAF cooldown lock if any previous request got rate limited.
- * 2. Enforces autonomous Burst Breather after every 8 requests (6s pause) to refresh Cloudflare token bucket.
- * 3. Checks minimum inter-request interval (2000ms) so requests are never fired in bursts.
- * 4. Checks rolling 60s capacity (25 req/min). If full, calculates exact remaining wait and broadcasts countdown.
+ * 2. Enforces autonomous Burst Breather after consecutive requests to refresh Cloudflare token bucket.
+ * 3. Checks minimum inter-request interval (3000ms anonymous, 600ms authenticated).
+ * 4. Checks rolling 60s capacity (8 req/min anonymous, 80 req/min authenticated). If full, pauses and broadcasts countdown.
  */
 async function acquireRateLimitSlot() {
   while (true) {
+    const limits = getEffectiveRateLimits();
     const now = Date.now();
 
     // 1. Enforce active 429 / WAF cooldown lock
@@ -285,11 +359,11 @@ async function acquireRateLimitSlot() {
       continue;
     }
 
-    // 2. Enforce autonomous Burst Breather after every 8 requests (refresh Cloudflare tokens)
-    if (consecutiveCallCount >= BURST_BREATHER_THRESHOLD) {
+    // 2. Enforce autonomous Burst Breather after consecutive requests
+    if (consecutiveCallCount >= limits.breatherThreshold) {
       consecutiveCallCount = 0;
-      const breatherSecs = Math.ceil(BURST_BREATHER_DURATION_MS / 1000);
-      console.log(`[PS Store Scout] Taking autonomous breather pause (${breatherSecs}s) to refresh Cloudflare token bucket...`);
+      const breatherSecs = Math.ceil(limits.breatherDurationMs / 1000);
+      console.log(`[RunScout] Taking autonomous breather pause (${breatherSecs}s) to refresh Cloudflare token bucket...`);
       for (let sec = breatherSecs; sec > 0; sec--) {
         broadcastRateLimitStatus({
           isThrottled: true,
@@ -307,22 +381,22 @@ async function acquireRateLimitSlot() {
       });
     }
 
-    // 3. Enforce minimum inter-request interval (burst prevention: 2000ms)
+    // 3. Enforce minimum inter-request interval (burst prevention: minIntervalMs)
     const elapsedSinceLast = Date.now() - lastRequestTimestamp;
-    if (elapsedSinceLast < MIN_REQUEST_INTERVAL_MS) {
-      const waitInterval = MIN_REQUEST_INTERVAL_MS - elapsedSinceLast;
+    if (elapsedSinceLast < limits.minIntervalMs) {
+      const waitInterval = limits.minIntervalMs - elapsedSinceLast;
       await new Promise((r) => setTimeout(r, waitInterval));
     }
 
-    // 4. Enforce rolling 60-second window capacity (25 req/min)
+    // 4. Enforce rolling 60-second window capacity (maxPerMinute)
     cleanupRequestTimestamps();
-    if (requestTimestamps.length < MAX_REQUESTS_PER_MINUTE) {
+    if (requestTimestamps.length < limits.maxPerMinute) {
       break;
     }
     const oldestTimestamp = requestTimestamps[0] || Date.now();
     const waitMs = Math.max(100, (oldestTimestamp + 60000) - Date.now() + 100);
     const totalSecs = Math.ceil(waitMs / 1000);
-    console.log(`[PS Store Scout] Rate limit ceiling reached (${requestTimestamps.length}/${MAX_REQUESTS_PER_MINUTE}). Pausing queue for ${waitMs}ms...`);
+    console.log(`[RunScout] Rate limit ceiling reached (${requestTimestamps.length}/${limits.maxPerMinute}). Pausing queue for ${waitMs}ms...`);
     broadcastHeatUpdate();
 
     // Broadcast live countdown ticks every second so UI displays active status
@@ -331,7 +405,7 @@ async function acquireRateLimitSlot() {
         isThrottled: true,
         reason: 'ceiling',
         secondsRemaining: sec,
-        message: `API limit (${MAX_REQUESTS_PER_MINUTE}/min) — waiting ${sec}s...`
+        message: `API pacing (${limits.maxPerMinute}/min) — waiting ${sec}s...`
       });
       await new Promise((r) => setTimeout(r, Math.min(1000, waitMs)));
     }
@@ -401,7 +475,23 @@ async function executeRateLimitedFetch(url, timeoutMs = 7000, maxRetries = 2, ga
     try {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), timeoutMs);
-      const res = await fetch(url, { signal: controller.signal });
+      const reqHeaders = { 'Accept': 'application/json' };
+      if (currentSpeedrunApiKey) {
+        reqHeaders['X-API-Key'] = currentSpeedrunApiKey;
+      }
+      let res;
+      if (DRY_RUN) {
+        console.log(`[DRY RUN FETCH] - ${url} at ${Date.now()}`);
+        res = {
+          ok: true,
+          status: 200,
+          headers: new Headers(),
+          json: async () => ({ data: [] }),
+          text: async () => JSON.stringify({ data: [] })
+        };
+      } else {
+        res = await fetch(url, { headers: reqHeaders, signal: controller.signal });
+      }
       clearTimeout(timer);
       const fetchDuration = Date.now() - fetchStart;
 
@@ -439,7 +529,7 @@ async function executeRateLimitedFetch(url, timeoutMs = 7000, maxRetries = 2, ga
           pauseSeconds = retryValue;
         }
         cooldownUntilTimestamp = Date.now() + (pauseSeconds * 1000);
-        console.warn(`[PS Store Scout] Rate limited (${res.status}) on ${url}. Pausing queue for ${pauseSeconds}s (Retry-After)...`);
+        console.warn(`[RunScout] Rate limited (${res.status}) on ${url}. Pausing queue for ${pauseSeconds}s (Retry-After)...`);
         broadcastHeatUpdate();
 
         // Broadcast active countdown to sidebar and content scripts
@@ -565,7 +655,7 @@ async function executeSpeedrunQuery(title, checkRecords = false) {
   }
 
   try {
-    const searchUrl = `https://www.speedrun.com/api/v1/games?name=${encodeURIComponent(title.trim())}&_bulk=yes&max=5`;
+    const searchUrl = `https://www.speedrun.com/api/v1/games?name=${encodeURIComponent(title.trim())}&max=5`;
     const searchRes = await rateLimitedFetch(searchUrl, 7000, 2, title.trim());
     if (!searchRes || !searchRes.ok) {
       return { status: 'unverified', statusCode: searchRes ? searchRes.status : 0 };
@@ -641,7 +731,7 @@ async function executeSpeedrunQuery(title, checkRecords = false) {
       matchedTitle
     };
   } catch (err) {
-    console.warn('[PS Store Scout] Error querying Speedrun.com API for "' + title + '":', err);
+    console.warn('[RunScout] Error querying Speedrun.com API for "' + title + '":', err);
     return { status: 'unverified', error: String(err) };
   }
 }
@@ -685,9 +775,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message && (message.action === 'GET_API_HEAT' || message.type === 'GET_API_HEAT')) {
     cleanupRequestTimestamps();
+    const limits = getEffectiveRateLimits();
     sendResponse({
       count: requestTimestamps.length,
-      max: MAX_REQUESTS_PER_MINUTE
+      max: limits.maxPerMinute,
+      hasApiKey: limits.isAuthenticated
     });
     return true;
   }

@@ -287,14 +287,14 @@
 }
 
 /* Heat state colors */
-/* 0% - 60%: Cool Cyan (Safe) */
+/* 0% - 60%: Vibrant Green (Safe) */
 .api-heat-fill.heat-safe {
-  background: linear-gradient(90deg, #06b6d4 0%, #38bdf8 100%);
-  box-shadow: 0 0 6px rgba(56, 189, 248, 0.4);
+  background: linear-gradient(90deg, #4ade80 0%, #22c55e 100%);
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.4);
 }
 .api-heat-counter.heat-safe,
 .api-heat-icon.heat-safe {
-  color: #38bdf8;
+  color: #4ade80;
 }
 
 /* 61% - 85%: Yellow/Orange (Warming up) */
@@ -879,10 +879,10 @@
   height: 2px !important;
 }
 
-/* Volume Color Coding: Cyan (low), Yellow (medium), Red (high) */
+/* Volume Color Coding: Green (low), Yellow (medium), Red (high) */
 .api-bar.bar-low {
-  background: linear-gradient(180deg, #22d3ee 0%, #0891b2 100%);
-  box-shadow: 0 0 4px rgba(34, 211, 238, 0.35);
+  background: linear-gradient(180deg, #4ade80 0%, #22c55e 100%);
+  box-shadow: 0 0 4px rgba(34, 197, 94, 0.35);
 }
 
 .api-bar.bar-med {

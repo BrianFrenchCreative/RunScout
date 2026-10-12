@@ -1,4 +1,4 @@
-# PS Store Scout (Chrome Extension - Manifest V3)
+# RunScout (Chrome Extension - Manifest V3)
 
 A Chrome extension designed to declutter your browsing experience on [store.playstation.com](https://store.playstation.com), bookmark your favorite titles, and scout games for speedrunning and glitch hunting.
 
@@ -34,7 +34,7 @@ A Chrome extension designed to declutter your browsing experience on [store.play
   - **Speedrun Archive Source Configuration:** Select between TheRun.gg, Speedrun.com, or Custom Archive (with customizable base query URL).
   - **Gameplay & Media Provider:** Configure preferred engines (YouTube, Twitch, Google, or custom query URLs) for gameplay and review searches with instant preset chips.
   - **Relocated Data Management:** Cleanly houses JSON backup export and import controls away from the main list.
-- **Universal ISO 8601 UTC Backup:** Export library backups formatted with universal timestamps (`PS_Store_Scout_Backup_YYYY-MM-DDTHH-mm-ssZ.json`) to prevent accidental overwrites, along with reliable JSON import.
+- **Universal ISO 8601 UTC Backup:** Export library backups formatted with universal timestamps (`RunScout_Backup_YYYY-MM-DDTHH-mm-ssZ.json`) to prevent accidental overwrites, along with reliable JSON import.
 - **Instant Undo Toast:** Shows a brief, non-intrusive toast with an **"Undo"** button when a game is hidden, saved, or updated.
 
 ---
@@ -64,7 +64,7 @@ A Chrome extension designed to declutter your browsing experience on [store.play
 4. Click the **Load unpacked** button in the top-left corner.
 5. Select the extension directory:
    ```
-   e:\Antigravity\PS Store Scout
+   RunScout
    ```
 6. The extension is now installed and active!
 

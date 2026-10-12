@@ -1,5 +1,5 @@
 /**
- * PS Store Scout - Side Panel Logic
+ * RunScout - Side Panel Logic
  * 
  * Features:
  * - Segmented tabs: "Saved Games", "Untouched", and "Hidden Games"
@@ -77,6 +77,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const settingsDeepScoutCheckbox = document.getElementById('settingsDeepScoutCheckbox');
   let deepScoutEnabled = false;
 
+  const settingsSpeedrunApiKeyInput = document.getElementById('settingsSpeedrunApiKeyInput');
+  const toggleApiKeyVisibilityBtn = document.getElementById('toggleApiKeyVisibilityBtn');
+  const apiKeyStatusBadge = document.getElementById('apiKeyStatusBadge');
+  let speedrunApiKey = '';
+
   const diagRequestsToday = document.getElementById('diagRequestsToday');
   const diagRateLimitsToday = document.getElementById('diagRateLimitsToday');
   const copyApiLogBtn = document.getElementById('copyApiLogBtn');
@@ -102,11 +107,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const ver = manifest && manifest.version ? `v${manifest.version}` : '';
       if (mainVersionBadge) {
         mainVersionBadge.textContent = ver;
-        mainVersionBadge.title = `PS Store Scout Release ${ver}`;
+        mainVersionBadge.title = `RunScout Release ${ver}`;
       }
       if (settingsVersionBadge) {
         settingsVersionBadge.textContent = ver;
-        settingsVersionBadge.title = `PS Store Scout Release ${ver}`;
+        settingsVersionBadge.title = `RunScout Release ${ver}`;
       }
     } catch (e) {}
   }
@@ -606,6 +611,7 @@ document.addEventListener('DOMContentLoaded', () => {
     customHideKeywords: [],
     forceRecheckScouted: false,
     deepScoutEnabled: false,
+    speedrunApiKey: '',
     apiDiagnostics: null
   }, (res) => {
     if (res) {
@@ -614,6 +620,7 @@ document.addEventListener('DOMContentLoaded', () => {
       mediaProviderUrl = res.mediaProviderUrl || 'https://www.youtube.com/results?search_query=';
       forceRecheckScouted = Boolean(res.forceRecheckScouted === true);
       deepScoutEnabled = Boolean(res.deepScoutEnabled === true);
+      speedrunApiKey = typeof res.speedrunApiKey === 'string' ? res.speedrunApiKey : '';
 
       if (dbSelector) dbSelector.value = activeDbProvider;
       if (customDbUrlInput) customDbUrlInput.value = customDbUrl;
@@ -633,6 +640,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (settingsDeepScoutCheckbox) {
         settingsDeepScoutCheckbox.checked = deepScoutEnabled;
       }
+      if (settingsSpeedrunApiKeyInput) {
+        settingsSpeedrunApiKeyInput.value = speedrunApiKey;
+      }
+      updateApiKeyStatusBadge();
 
       customHideKeywords = Array.isArray(res.customHideKeywords) ? res.customHideKeywords : [];
 
@@ -773,6 +784,39 @@ document.addEventListener('DOMContentLoaded', () => {
       chrome.storage.local.set({ dbProvider: activeDbProvider }, () => {
         renderList();
       });
+    });
+  }
+
+  function updateApiKeyStatusBadge() {
+    if (!apiKeyStatusBadge) return;
+    if (speedrunApiKey && speedrunApiKey.trim().length > 0) {
+      apiKeyStatusBadge.textContent = '✓ Authenticated (80/min)';
+      apiKeyStatusBadge.style.color = '#38ef7d';
+      apiKeyStatusBadge.style.background = 'rgba(56, 239, 125, 0.15)';
+    } else {
+      apiKeyStatusBadge.textContent = 'Anonymous (8/min)';
+      apiKeyStatusBadge.style.color = 'var(--color-text-dim, #888)';
+      apiKeyStatusBadge.style.background = 'rgba(255, 255, 255, 0.06)';
+    }
+  }
+
+  if (settingsSpeedrunApiKeyInput) {
+    settingsSpeedrunApiKeyInput.addEventListener('input', () => {
+      speedrunApiKey = settingsSpeedrunApiKeyInput.value.trim();
+      chrome.storage.local.set({ speedrunApiKey });
+      updateApiKeyStatusBadge();
+    });
+  }
+
+  if (toggleApiKeyVisibilityBtn && settingsSpeedrunApiKeyInput) {
+    toggleApiKeyVisibilityBtn.addEventListener('click', () => {
+      if (settingsSpeedrunApiKeyInput.type === 'password') {
+        settingsSpeedrunApiKeyInput.type = 'text';
+        toggleApiKeyVisibilityBtn.textContent = '🔒';
+      } else {
+        settingsSpeedrunApiKeyInput.type = 'password';
+        toggleApiKeyVisibilityBtn.textContent = '👁';
+      }
     });
   }
 
@@ -1563,13 +1607,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (result.autoHideHasRuns !== undefined && autoHideHasRunsCheckbox) {
         autoHideHasRunsCheckbox.checked = Boolean(result.autoHideHasRuns === true);
       }
-      if (result.autoHideVrGames !== undefined && autoHideVrGamesCheckbox) {
-        autoHideVrGamesCheckbox.checked = Boolean(result.autoHideVrGames === true);
-      }
-      if (autoHideSimulatorsCheckbox) {
-        const simVal = Boolean(result.autoHideSimulators === true || result.autoHideSimulatorGames === true);
-        autoHideSimulatorsCheckbox.checked = simVal;
-      }
       if (result.customHideKeywords !== undefined) {
         customHideKeywords = Array.isArray(result.customHideKeywords) ? result.customHideKeywords : [];
         renderCustomKeywordChips();
@@ -1679,7 +1716,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const downloadLink = document.createElement('a');
         downloadLink.href = url;
         const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-') + 'Z';
-        downloadLink.download = `PS_Store_Scout_Backup_${timestamp}.json`;
+        downloadLink.download = `RunScout_Backup_${timestamp}.json`;
         document.body.appendChild(downloadLink);
         downloadLink.click();
         document.body.removeChild(downloadLink);
@@ -2029,7 +2066,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       chrome.tabs.sendMessage(tabId, { action: 'GET_SCOUT_STATUS' }, (res) => {
         if (chrome.runtime.lastError || !res || res.isScouting !== true) {
-          console.log('[PS Store Scout] Watchdog: Content script scouting ended or port closed. Syncing UI.');
+          console.log('[RunScout] Watchdog: Content script scouting ended or port closed. Syncing UI.');
           stopScoutWatchdog();
           resetScoutButtonState();
         }
@@ -2315,10 +2352,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  function updateHeatMeter(count, max = 40) {
+  function updateHeatMeter(count, max = 8) {
     if (!apiHeatFill || !apiHeatCounter) return;
     const safeCount = Math.max(0, Number(count) || 0);
-    const safeMax = Math.max(1, Number(max) || 40);
+    const safeMax = Math.max(1, Number(max) || 8);
     const percentage = Math.min(100, Math.round((safeCount / safeMax) * 100));
 
     apiHeatFill.style.width = `${percentage}%`;
@@ -2399,3 +2436,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+   

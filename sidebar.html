@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PS Store Scout</title>
+  <title>RunScout</title>
   <link rel="stylesheet" href="popup.css">
   <link rel="stylesheet" href="sidebar.css">
 </head>
@@ -24,7 +24,7 @@
           </svg>
         </div>
         <div>
-          <h1 class="title">PS Store Scout</h1>
+          <h1 class="title">RunScout</h1>
           <p class="subtitle" id="headerSubtitle">Saved Games Manager</p>
         </div>
       </div>
@@ -265,6 +265,18 @@
               autocomplete="off" spellcheck="false">
             <p class="settings-hint">The sanitized game title will be appended to this search URL.</p>
           </div>
+
+          <div class="settings-field-group" style="margin-top: 14px; border-top: 1px solid var(--color-border-subtle, rgba(255,255,255,0.08)); padding-top: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
+              <label for="settingsSpeedrunApiKeyInput" class="settings-label" style="margin-bottom: 0;">Speedrun.com API Key <span style="font-size: 11px; opacity: 0.65; font-weight: normal;">(Optional)</span></label>
+              <span id="apiKeyStatusBadge" style="font-size: 10px; padding: 2px 7px; border-radius: 4px; background: rgba(255,255,255,0.06); color: var(--color-text-dim, #888); font-weight: 500;">Anonymous</span>
+            </div>
+            <div style="display: flex; gap: 6px; align-items: center;">
+              <input type="password" id="settingsSpeedrunApiKeyInput" class="settings-input" placeholder="Paste your personal API key here..." autocomplete="off" spellcheck="false" style="flex: 1;">
+              <button type="button" id="toggleApiKeyVisibilityBtn" class="btn btn-secondary" style="padding: 7px 11px; font-size: 11px; height: 34px; min-width: 38px;" title="Show/Hide API Key">👁</button>
+            </div>
+            <p class="settings-hint">Unlocks 100+ req/min for faster scouting. Free at <strong>speedrun.com ➔ Settings ➔ API</strong>. Saved only in your browser storage.</p>
+          </div>
         </section>
 
         <!-- Section 2: Automatic Hiding Rules & Custom Title Keywords -->
@@ -471,7 +483,7 @@
 
         <!-- Settings Footer / Dynamic Version Info -->
         <div class="settings-footer">
-          <span class="settings-app-name">PS Store Scout</span>
+          <span class="settings-app-name">RunScout</span>
           <span id="settingsVersionBadge" class="settings-version-badge"></span>
         </div>
       </div>

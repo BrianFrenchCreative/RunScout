@@ -1,15 +1,16 @@
 {
   "manifest_version": 3,
-  "name": "PS Store Scout",
-  "short_name": "PS Store Scout",
-  "version": "1.2.9",
+  "name": "RunScout",
+  "short_name": "RunScout",
+  "version": "1.3.6",
   "description": "Scout PlayStation Store games against Speedrun.com leaderboards, discover untouched speedruns, and customize your catalog with smart game hiding and bookmarking.",
   "permissions": [
     "storage",
     "tabs",
     "activeTab",
     "sidePanel",
-    "scripting"
+    "scripting",
+    "declarativeNetRequest"
   ],
   "background": {
     "service_worker": "background.js"
@@ -38,7 +39,7 @@
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     },
-    "default_title": "PS Store Scout"
+    "default_title": "RunScout"
   },
   "icons": {
     "16": "icons/icon16.png",

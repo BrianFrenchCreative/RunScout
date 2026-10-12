@@ -1,5 +1,5 @@
 /**
- * PlayStation Store Game Hider - Content Script
+ * RunScout - Content Script
  * 
  * Features:
  * 1. Catalog Grid:
@@ -521,7 +521,7 @@
      */
     function cancelPageScout(reason = 'user_cancelled') {
       if (!isScoutingInProgress) return;
-      console.log(`[PS Store Scout] Cancelling active scout (reason: ${reason})`);
+      console.log(`[RunScout] Cancelling active scout (reason: ${reason})`);
       isScoutingInProgress = false;
       if (scoutAbortController) {
         try {
@@ -1770,92 +1770,8 @@
     }
 
     /* ==========================================================================
-       SPEEDRUN.COM AUTO-SCOUT & GRID OVERLAY LOGIC
+       SPEEDRUN.COM SCOUT STATUS DISPATCH (DELEGATED TO SERVICE WORKER)
        ========================================================================== */
-
-    async function executeDirectSpeedrunQuery(title) {
-      if (!title || typeof title !== 'string' || !title.trim()) {
-        return { status: 'unverified' };
-      }
-      try {
-        const c1 = new AbortController();
-        const t1 = setTimeout(() => c1.abort(), 6000);
-        const searchUrl = 'https://www.speedrun.com/api/v1/games?name=' + encodeURIComponent(title.trim());
-        const searchRes = await fetch(searchUrl, { signal: c1.signal });
-        clearTimeout(t1);
-        if (!searchRes.ok) return { status: 'unverified' };
-        const searchData = await searchRes.json();
-        if (!searchData || !Array.isArray(searchData.data) || searchData.data.length === 0) {
-          return { status: 'unverified' };
-        }
-
-        let game = searchData.data[0];
-        const targetLower = title.trim().toLowerCase();
-
-        // 1. First pass: Exact case-insensitive match
-        for (const g of searchData.data) {
-          const gName = (g.names && g.names.international) ? g.names.international.toLowerCase() : '';
-          if (gName === targetLower) {
-            game = g;
-            break;
-          }
-        }
-
-        // 2. Second pass: Match ignoring punctuation (colons, hyphens, commas) e.g. "DmC Devil May Cry" vs "DmC: Devil May Cry"
-        if ((game.names?.international || '').toLowerCase() !== targetLower) {
-          const targetPunctClean = targetLower.replace(/[:\-–—,\.]/g, '').replace(/\s+/g, ' ').trim();
-          for (const g of searchData.data) {
-            const gName = (g.names && g.names.international) ? g.names.international.toLowerCase() : '';
-            const gClean = gName.replace(/[:\-–—,\.]/g, '').replace(/\s+/g, ' ').trim();
-            if (gClean === targetPunctClean) {
-              game = g;
-              break;
-            }
-          }
-        }
-
-        const gameId = game.id;
-        if (!gameId) return { status: 'unverified' };
-
-        const weblink = game.weblink || '';
-        const matchedTitle = (game.names && game.names.international) ? game.names.international : title;
-
-        const c2 = new AbortController();
-        const t2 = setTimeout(() => c2.abort(), 6000);
-        const recordsUrl = 'https://www.speedrun.com/api/v1/games/' + encodeURIComponent(gameId) + '/records?top=1';
-        const recordsRes = await fetch(recordsUrl, { signal: c2.signal });
-        clearTimeout(t2);
-        if (!recordsRes.ok) return { status: 'untouched', weblink, matchedTitle };
-        const recordsData = await recordsRes.json();
-
-        let hasRuns = false;
-        if (recordsData && Array.isArray(recordsData.data)) {
-          for (const cat of recordsData.data) {
-            if (cat && Array.isArray(cat.runs) && cat.runs.length > 0) {
-              hasRuns = true;
-              break;
-            }
-          }
-        }
-
-        return {
-          status: hasRuns ? 'has_runs' : 'untouched',
-          weblink,
-          matchedTitle
-        };
-      } catch (err) {
-        return { status: 'unverified' };
-      }
-    }
-
-    async function fetchSpeedrunStatusDirect(cleanTitle) {
-      if (!cleanTitle || typeof cleanTitle !== 'string' || !cleanTitle.trim()) {
-        return { status: 'unverified' };
-      }
-      const normalizedTitle = stripEditionSuffix(cleanTitle.trim());
-      // Fast single-query search: exactly ONE search request to Speedrun.com
-      return await executeDirectSpeedrunQuery(normalizedTitle);
-    }
 
     function requestSpeedrunStatus(cleanTitle, signal, checkRecords = false) {
       return new Promise((resolve) => {
@@ -1900,29 +1816,35 @@
         }
 
         if (!isExtensionValid()) {
-          fetchSpeedrunStatusDirect(cleanTitle).then((st) => {
-            complete(st);
-          }).catch(() => {
-            complete({ status: 'unverified' });
-          });
+          complete({ status: 'unverified' });
           return;
         }
 
-        function attemptSendMessage(isRetry = false) {
+        const BACKOFF_DELAYS = [400, 800, 1600];
+        let attempt = 0;
+
+        function attemptSendMessage() {
+          if (isCompleted) return;
+          if (signal && signal.aborted) {
+            complete({ status: 'unverified' });
+            return;
+          }
+          if (!isExtensionValid()) {
+            complete({ status: 'unverified' });
+            return;
+          }
+
           try {
             chrome.runtime.sendMessage({ type: 'FETCH_SPEEDRUN_STATUS', cleanTitle, checkRecords }, (res) => {
-              if (chrome.runtime.lastError || !res || !res.status) {
-                if (!isRetry) {
-                  // Service worker might have been sleeping in MV3; wait 400ms and retry once
-                  setTimeout(() => attemptSendMessage(true), 400);
+              const lastErr = chrome.runtime.lastError;
+              if (lastErr || !res || !res.status) {
+                if (attempt < BACKOFF_DELAYS.length) {
+                  const delay = BACKOFF_DELAYS[attempt++];
+                  setTimeout(attemptSendMessage, delay);
                   return;
                 }
-                // Fallback to direct query if service worker communication still failed
-                fetchSpeedrunStatusDirect(cleanTitle).then((st) => {
-                  complete(st);
-                }).catch(() => {
-                  complete({ status: 'unverified' });
-                });
+                // Background script remains unreachable after all attempts
+                complete({ status: 'unverified' });
               } else {
                 complete({
                   status: res.status,
@@ -1932,19 +1854,16 @@
               }
             });
           } catch (err) {
-            if (!isRetry) {
-              setTimeout(() => attemptSendMessage(true), 400);
+            if (attempt < BACKOFF_DELAYS.length) {
+              const delay = BACKOFF_DELAYS[attempt++];
+              setTimeout(attemptSendMessage, delay);
               return;
             }
-            fetchSpeedrunStatusDirect(cleanTitle).then((st) => {
-              complete(st);
-            }).catch(() => {
-              complete({ status: 'unverified' });
-            });
+            complete({ status: 'unverified' });
           }
         }
 
-        attemptSendMessage(false);
+        attemptSendMessage();
       });
     }
 
@@ -2169,7 +2088,7 @@
           }
 
           if (hideReason) {
-            console.log(`[PS Store Scout] Pre-scout auto-hiding (${hideReason}): "${rawTitle}"`);
+            console.log(`[RunScout] Pre-scout auto-hiding (${hideReason}): "${rawTitle}"`);
             if (!gamesMasterList[key]) {
               gamesMasterList[key] = {
                 title: rawTitle,
@@ -2280,7 +2199,7 @@
             }
 
             if (currentAbortSignal.aborted || !isScoutingInProgress) {
-              console.log('[PS Store Scout] Scouting cancelled mid-queue.');
+              console.log('[RunScout] Scouting cancelled mid-queue.');
               break;
             }
 
@@ -2289,7 +2208,7 @@
             try {
               const scoutResult = await requestSpeedrunStatus(item.cleanTitle, currentAbortSignal, deepScout);
               if (currentAbortSignal.aborted || !isScoutingInProgress) {
-                console.log('[PS Store Scout] Scouting cancelled after request.');
+                console.log('[RunScout] Scouting cancelled after request.');
                 break;
               }
 
@@ -2334,7 +2253,7 @@
                 gamesMasterList[item.key].timestamp = Date.now();
               }
 
-              console.log(`[PS Store Scout] Scouted "${item.rawTitle}" -> "${item.cleanTitle}": status=${status}, matched="${matchedTitle || ''}" (saved=${isGameAlreadySaved}, hidden=${gamesMasterList[item.key].isHidden})`);
+              console.log(`[RunScout] Scouted "${item.rawTitle}" -> "${item.cleanTitle}": status=${status}, matched="${matchedTitle || ''}" (saved=${isGameAlreadySaved}, hidden=${gamesMasterList[item.key].isHidden})`);
               // Immediately save discovered speedrun status into chrome.storage.local
               safeStorageSet({ gamesMasterList });
 
@@ -2347,7 +2266,7 @@
                 injectGridStatusBadge(tile, item.rawTitle, item.url, status, isSaved);
               });
             } catch (itemErr) {
-              console.warn(`[PS Store Scout] Non-fatal error scouting "${item ? item.rawTitle : 'unknown'}":`, itemErr);
+              console.warn(`[RunScout] Non-fatal error scouting "${item ? item.rawTitle : 'unknown'}":`, itemErr);
             } finally {
               // Always send real-time progress update to sidebar so counter never freezes
               try {
@@ -2364,7 +2283,7 @@
             }
           }
         } catch (queueErr) {
-          console.error('[PS Store Scout] Fatal error during scouting queue:', queueErr);
+          console.error('[RunScout] Fatal error during scouting queue:', queueErr);
         } finally {
           if (masterListChanged) {
             safeStorageSet({ gamesMasterList });
@@ -2453,7 +2372,7 @@
         }
 
         if (restoredCount > 0) {
-          console.log(`[PS Store Scout] Restored ${restoredCount} cached badges on page`);
+          console.log(`[RunScout] Restored ${restoredCount} cached badges on page`);
         }
       });
     }
@@ -2752,7 +2671,7 @@
 
       // Cancel any ongoing scout if user navigated away from the grid page
       if (isScoutingInProgress && !isGrid) {
-        console.log('[PS Store Scout] Navigated away from grid page while scouting. Halting scout.');
+        console.log('[RunScout] Navigated away from grid page while scouting. Halting scout.');
         cancelPageScout('navigated_away');
       }
 
@@ -2818,14 +2737,13 @@
       }
     }, 400);
 
-    // Expose devtools inspect helper for user testing
-    window.__psScoutList = function() {
+    window.__runScoutList = window.__psScoutList = function() {
       safeStorageGet({ gamesMasterList: {} }, (res) => {
         const list = res?.gamesMasterList || {};
         const entries = Object.values(list);
-        console.log(`%c[PS Store Scout] Stored Catalog Database (${entries.length} games cached):`, 'font-weight:bold;color:#3b82f6;font-size:13px;');
+        console.log(`%c[RunScout] Stored Catalog Database (${entries.length} games cached):`, 'font-weight:bold;color:#3b82f6;font-size:13px;');
         if (entries.length === 0) {
-          console.warn('[PS Store Scout] No games cached in storage yet. Scout a page or save/hide games to populate the database.');
+          console.warn('[RunScout] No games cached in storage yet. Scout a page or save/hide games to populate the database.');
           return;
         }
         console.table(entries.map((g) => ({
