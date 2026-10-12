@@ -1,0 +1,20 @@
+# Build outputs and archives
+*.zip
+*.tar.gz
+*.tgz
+
+# Extension backup snapshots
+backups/
+PS_Store_Scout_Backup*.json
+
+# OS and Editor metadata
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.log
+
+# Node dependencies
+node_modules/
+package-lock.json

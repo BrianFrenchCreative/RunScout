@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PS Store Scout</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-title-row">
+        <div class="logo-wrapper">
+          <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+            <line x1="1" y1="1" x2="23" y2="23"></line>
+          </svg>
+        </div>
+        <div>
+          <h1 class="title">PS Store Scout</h1>
+          <p class="subtitle" id="headerSubtitle">Saved Games Manager</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Tabs Navigation (Segmented Control - Saved Games Prioritized) -->
+    <nav class="tabs-nav" role="tablist">
+      <button type="button" class="tab-btn active" id="tabSaved" role="tab" aria-selected="true">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+        </svg>
+        <span>Saved Games</span>
+        <span id="tabSavedBadge" class="tab-badge">0</span>
+      </button>
+      <button type="button" class="tab-btn" id="tabUntouched" role="tab" aria-selected="false">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+        </svg>
+        <span>Untouched</span>
+        <span id="tabUntouchedBadge" class="tab-badge">0</span>
+      </button>
+      <button type="button" class="tab-btn" id="tabHidden" role="tab" aria-selected="false">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+          <line x1="1" y1="1" x2="23" y2="23"></line>
+        </svg>
+        <span>Hidden Games</span>
+        <span id="tabHiddenBadge" class="tab-badge">0</span>
+      </button>
+    </nav>
+
+    <!-- Master Enable/Disable Toggle Section -->
+    <div class="master-toggle-container" id="masterToggleContainer">
+      <div class="master-toggle-text">
+        <label for="masterToggle" class="master-toggle-label">Enable Hiding</label>
+        <span id="masterToggleStatus" class="master-toggle-status">Active</span>
+      </div>
+      <label class="toggle-switch" for="masterToggle" title="Enable or disable hiding">
+        <input type="checkbox" id="masterToggle" checked>
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <!-- Search / Filter Bar -->
+    <div class="search-bar" id="searchContainer">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input type="text" id="searchInput" placeholder="Search saved games..." autocomplete="off">
+      <button type="button" id="clearSearchBtn" class="clear-search-btn" title="Clear filter" style="display: none;">&times;</button>
+    </div>
+
+    <!-- Filters Row: Genre Filter & Untouched Only Toggle -->
+    <div class="filters-row" id="filtersRow">
+      <select id="genreFilter" class="genre-filter-select" aria-label="Filter games by genre">
+        <option value="all">All Genres</option>
+      </select>
+      <button type="button" id="untouchedFilterBtn" class="filter-pill-btn" aria-pressed="false" title="Filter to untouched speedrun games only">
+        <svg class="pill-star-icon" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+        </svg>
+        <span>Untouched Only</span>
+      </button>
+    </div>
+
+    <!-- Speedrun Search Provider Dropdown -->
+    <div class="db-provider-container" id="dbProviderContainer">
+      <label for="dbSelector" class="db-provider-label">Speedrun Archive Source</label>
+      <select id="dbSelector" class="db-provider-select" aria-label="Speedrun Archive Source">
+        <option value="therun">TheRun.gg</option>
+        <option value="src">Speedrun.com</option>
+        <option value="custom">Custom Archive</option>
+      </select>
+    </div>
+
+    <!-- Games List -->
+    <main class="content-area">
+      <ul id="gamesList" class="games-list"></ul>
+
+      <!-- Show All / Show Recent Toggle Container -->
+      <div id="showAllContainer" class="show-all-container" style="display: none;">
+        <button type="button" id="toggleShowAllBtn" class="toggle-show-all-btn">
+          <span id="toggleShowAllText">Show all games</span>
+          <svg id="toggleShowAllIcon" class="toggle-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Empty State -->
+      <div id="emptyState" class="empty-state" style="display: none;">
+        <div id="emptyIconWrap" class="empty-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="#facc15" stroke="#facc15" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+          </svg>
+        </div>
+        <p id="emptyTitle" class="empty-title">No saved games</p>
+        <p id="emptyDescription" class="empty-description">
+          Browse <a href="https://store.playstation.com" target="_blank" rel="noopener noreferrer">store.playstation.com</a> and click the <strong>bookmark icon</strong> on any product tile to save it.
+        </p>
+      </div>
+
+      <!-- No Search Results State -->
+      <div id="noResultsState" class="empty-state" style="display: none;">
+        <p class="empty-title">No matches found</p>
+        <p class="empty-description">Try a different search query or filter.</p>
+      </div>
+    </main>
+
+    <!-- Footer Controls -->
+    <footer class="footer">
+      <div class="footer-status-row">
+        <span id="footerInfo" class="footer-info">0 saved</span>
+        <button type="button" id="clearAllBtn" class="clear-all-btn" title="Remove all saved games">
+          Remove All
+        </button>
+      </div>
+      <div class="footer-backup-row">
+        <button type="button" id="exportBackupBtn" class="backup-btn" title="Export backup to JSON">
+          <svg class="backup-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span>Export Backup</span>
+        </button>
+        <button type="button" id="importBackupBtn" class="backup-btn" title="Import backup from JSON">
+          <svg class="backup-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          <span>Import Backup</span>
+        </button>
+        <input type="file" id="importFile" accept=".json" style="display: none;">
+      </div>
+    </footer>
+  </div>
+
+  <script src="sidebar.js"></script>
+</body>
+</html>

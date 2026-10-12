@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PS Store Scout</title>
+  <link rel="stylesheet" href="popup.css">
+  <link rel="stylesheet" href="sidebar.css">
+</head>
+
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-title-row">
+        <div class="logo-wrapper">
+          <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path
+              d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24">
+            </path>
+            <line x1="1" y1="1" x2="23" y2="23"></line>
+          </svg>
+        </div>
+        <div>
+          <h1 class="title">PS Store Scout</h1>
+          <p class="subtitle" id="headerSubtitle">Saved Games Manager</p>
+        </div>
+      </div>
+      <button type="button" id="settingsBtn" class="header-icon-btn" title="Settings" aria-label="Settings">
+        <svg class="header-icon-svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path
+            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+          </path>
+        </svg>
+      </button>
+    </header>
+
+    <!-- Main List Container -->
+    <div id="mainListContainer" class="main-list-container">
+      <!-- Tabs Navigation (Segmented Control - Saved Games Prioritized) -->
+      <nav class="tabs-nav" role="tablist">
+        <button type="button" class="tab-btn active" id="tabSaved" role="tab" aria-selected="true">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+          </svg>
+          <span>Saved Games</span>
+          <span id="tabSavedBadge" class="tab-badge">0</span>
+        </button>
+        <button type="button" class="tab-btn" id="tabUntouched" role="tab" aria-selected="false">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polygon
+              points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+            </polygon>
+          </svg>
+          <span>Untouched</span>
+          <span id="tabUntouchedBadge" class="tab-badge">0</span>
+        </button>
+        <button type="button" class="tab-btn" id="tabHidden" role="tab" aria-selected="false">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path
+              d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24">
+            </path>
+            <line x1="1" y1="1" x2="23" y2="23"></line>
+          </svg>
+          <span>Hidden Games</span>
+          <span id="tabHiddenBadge" class="tab-badge">0</span>
+        </button>
+      </nav>
+
+      <!-- Master Enable/Disable Toggle Section -->
+      <div class="master-toggle-container" id="masterToggleContainer">
+        <div class="master-toggle-text">
+          <label for="masterToggle" class="master-toggle-label">Enable Hiding</label>
+          <span id="masterToggleStatus" class="master-toggle-status">Active</span>
+        </div>
+        <label class="toggle-switch" for="masterToggle" title="Enable or disable hiding">
+          <input type="checkbox" id="masterToggle" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <!-- Scout Page Action Container -->
+      <div class="scout-action-container" id="scoutActionContainer">
+        <button type="button" id="scoutPageBtn" class="scout-page-btn" title="Scout current PlayStation Store page">
+          <svg class="scout-radar-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 2a10 10 0 0 1 10 10"></path>
+            <line x1="12" y1="12" x2="19" y2="5"></line>
+            <circle cx="12" cy="12" r="2"></circle>
+          </svg>
+          <span id="scoutBtnText">Scout Current Page</span>
+        </button>
+        <div class="scout-options-row">
+          <label class="scout-option-label" for="deepScoutCheckbox" title="Fast Scout (unchecked): 1 query per game (~35s). Deep Scout (checked): Queries leaderboard records to find 0-run untouched games (~65s).">
+            <input type="checkbox" id="deepScoutCheckbox">
+            <span>Deep Scout (check 0-run leaderboards)</span>
+          </label>
+          <label class="scout-option-label" for="forceRecheckScoutedCheckbox" title="Force page scouting to re-query Speedrun.com for previously checked games">
+            <input type="checkbox" id="forceRecheckScoutedCheckbox">
+            <span>Re-query previously scouted games</span>
+          </label>
+        </div>
+        <div id="scoutProgress" class="scout-progress-container hidden">
+          <div class="scout-progress-header">
+            <span class="scout-progress-status" id="scoutProgressStatus">Scouting games...</span>
+            <div class="scout-progress-right">
+              <span class="scout-progress-counter" id="scoutProgressCounter">0 / 0</span>
+              <button type="button" id="scoutCancelBtn" class="scout-cancel-btn" title="Stop scouting current page">
+                <svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor" aria-hidden="true">
+                  <rect x="5" y="5" width="14" height="14" rx="2"></rect>
+                </svg>
+                <span>Stop</span>
+              </button>
+            </div>
+          </div>
+          <div class="scout-progress-bar-wrap">
+            <div class="scout-progress-bar" id="scoutProgressBar" style="width: 0%;"></div>
+          </div>
+        </div>
+
+        <!-- API Throttle Heat Meter -->
+        <div id="apiHeatMeter" class="api-heat-meter" title="Speedrun.com rolling-window API capacity (max 40 requests per minute with burst prevention)">
+          <div class="api-heat-header">
+            <div class="api-heat-title-wrap">
+              <svg class="api-heat-icon heat-safe" id="apiHeatIcon" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>
+              </svg>
+              <span class="api-heat-label">API Throttle Heat</span>
+            </div>
+            <span class="api-heat-counter heat-safe" id="apiHeatCounter">API Heat: 0/40</span>
+          </div>
+          <div class="api-heat-track">
+            <div class="api-heat-fill heat-safe" id="apiHeatFill" style="width: 0%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search / Filter Bar -->
+      <div class="search-bar" id="searchContainer">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="searchInput" placeholder="Search saved games..." autocomplete="off">
+        <button type="button" id="clearSearchBtn" class="clear-search-btn" title="Clear filter"
+          style="display: none;">&times;</button>
+      </div>
+
+      <!-- Filters Row: Genre Filter & Untouched Only Toggle -->
+      <div class="filters-row" id="filtersRow">
+        <select id="genreFilter" class="genre-filter-select" aria-label="Filter games by genre">
+          <option value="all">All Genres</option>
+        </select>
+        <button type="button" id="untouchedFilterBtn" class="filter-pill-btn" aria-pressed="false"
+          title="Filter to untouched speedrun games only">
+          <svg class="pill-star-icon" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polygon
+              points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+            </polygon>
+          </svg>
+          <span>Untouched Only</span>
+        </button>
+      </div>
+
+      <!-- Games List -->
+      <main class="content-area">
+        <ul id="gamesList" class="games-list"></ul>
+
+        <!-- Show All / Show Recent Toggle Container -->
+        <div id="showAllContainer" class="show-all-container" style="display: none;">
+          <button type="button" id="toggleShowAllBtn" class="toggle-show-all-btn">
+            <span id="toggleShowAllText">Show all games</span>
+            <svg id="toggleShowAllIcon" class="toggle-icon" viewBox="0 0 24 24" width="13" height="13" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="empty-state" style="display: none;">
+          <div id="emptyIconWrap" class="empty-icon-wrap">
+            <svg viewBox="0 0 24 24" fill="#facc15" stroke="#facc15" stroke-width="1.8" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+            </svg>
+          </div>
+          <p id="emptyTitle" class="empty-title">No saved games</p>
+          <p id="emptyDescription" class="empty-description">
+            Browse <a href="https://store.playstation.com" target="_blank"
+              rel="noopener noreferrer">store.playstation.com</a> and click the <strong>bookmark icon</strong> on any
+            product tile to save it.
+          </p>
+        </div>
+
+        <!-- No Search Results State -->
+        <div id="noResultsState" class="empty-state" style="display: none;">
+          <p class="empty-title">No matches found</p>
+          <p class="empty-description">Try a different search query or filter.</p>
+        </div>
+      </main>
+
+      <!-- Footer Controls -->
+      <footer class="footer">
+        <div class="footer-status-row">
+          <span id="footerInfo" class="footer-info">0 saved</span>
+          <span id="mainVersionBadge" class="footer-version-badge"></span>
+          <button type="button" id="clearAllBtn" class="clear-all-btn" title="Remove all saved games">
+            Remove All
+          </button>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Settings View Container -->
+    <div id="settingsView" class="settings-view hidden">
+      <!-- Settings Header Bar -->
+      <div class="settings-header-bar">
+        <button type="button" id="backToListBtn" class="settings-back-btn" title="Return to games list">
+          <svg class="back-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+            stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+          <span>Back to List</span>
+        </button>
+        <span class="settings-title-label">Settings</span>
+      </div>
+
+      <!-- Settings Scrollable Content -->
+      <div class="settings-content-body">
+        <!-- Section 1: Speedrun Archive Configuration -->
+        <section class="settings-section">
+          <div class="settings-section-header">
+            <svg class="settings-section-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <h2 class="settings-section-title">Speedrun Archive Source</h2>
+          </div>
+          <p class="settings-section-desc">Select the archive database opened when clicking the search icon on game items.</p>
+
+          <div class="settings-field-group">
+            <label for="dbSelector" class="settings-label">Archive Provider</label>
+            <select id="dbSelector" class="settings-select" aria-label="Speedrun Archive Source">
+              <option value="therun">TheRun.gg</option>
+              <option value="src">Speedrun.com</option>
+              <option value="custom">Custom Archive</option>
+            </select>
+          </div>
+
+          <div id="customDbContainer" class="settings-field-group hidden">
+            <label for="customDbUrl" class="settings-label">Custom Archive URL</label>
+            <input type="text" id="customDbUrl" class="settings-input" placeholder="https://nudatabase.com/?q="
+              autocomplete="off" spellcheck="false">
+            <p class="settings-hint">The sanitized game title will be appended to this search URL.</p>
+          </div>
+        </section>
+
+        <!-- Section 2: Automatic Hiding Rules & Custom Title Keywords -->
+        <section class="settings-section">
+          <div class="settings-section-header">
+            <svg class="settings-section-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+              <line x1="1" y1="1" x2="23" y2="23"></line>
+            </svg>
+            <h2 class="settings-section-title">Automatic Hiding Rules</h2>
+          </div>
+          <p class="settings-section-desc">Select criteria to automatically hide games and skip speedrun checks during page scouting:</p>
+
+          <div class="settings-checkbox-list">
+            <label class="settings-checkbox-row" for="settingsDeepScoutCheckbox">
+              <input type="checkbox" id="settingsDeepScoutCheckbox">
+              <span class="settings-checkbox-content">
+                <span class="settings-checkbox-title">Deep Scout (Verify 0-run leaderboards)</span>
+                <span class="settings-checkbox-desc">Off = Fast Scout (1 call/game, ~35s). On = Deep Scout (queries records, ~65s).</span>
+              </span>
+            </label>
+            <label class="settings-checkbox-row" for="autoHideHasRunsCheckbox">
+              <input type="checkbox" id="autoHideHasRunsCheckbox">
+              <span class="settings-checkbox-content">
+                <span class="settings-checkbox-title">Has active speedruns</span>
+                <span class="settings-checkbox-desc">Auto-hide games with active Speedrun.com records</span>
+              </span>
+            </label>
+          </div>
+
+          <!-- Custom Title Keywords Sub-Section -->
+          <div class="custom-keywords-card">
+            <div class="custom-keywords-header">
+              <span class="custom-keywords-title">Custom Title Keywords</span>
+              <p class="settings-section-desc">Automatically hide games matching any of these keywords or phrases during scouting:</p>
+            </div>
+            <div class="custom-keywords-input-wrap">
+              <input type="text" id="customKeywordInput" class="custom-keyword-input" placeholder="e.g., VR, Simulator, Remastered, Demo" autocomplete="off" spellcheck="false">
+              <button type="button" id="addKeywordBtn" class="add-keyword-btn" title="Add keyword">Add</button>
+            </div>
+            <div id="customKeywordsChips" class="custom-keywords-chips">
+              <!-- Dynamically populated keyword chips -->
+            </div>
+          </div>
+        </section>
+
+        <!-- Section: API Diagnostics & Request Logger -->
+        <section class="settings-section" id="apiDiagnosticsSection">
+          <div class="settings-section-header">
+            <svg class="settings-section-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            </svg>
+            <h2 class="settings-section-title">API Diagnostics</h2>
+          </div>
+          <p class="settings-section-desc">Track Speedrun.com request volume, Cloudflare 429 blocks, and export recent call logs.</p>
+
+          <div class="api-diagnostics-card">
+            <div class="api-diagnostics-metrics">
+              <div class="diag-metric-row">
+                <span class="diag-metric-label">Requests Today:</span>
+                <span class="diag-metric-value" id="diagRequestsToday">0</span>
+              </div>
+              <div class="diag-metric-row">
+                <span class="diag-metric-label">Cloudflare 429 Strikes:</span>
+                <span class="diag-metric-value" id="diagRateLimitsToday">0</span>
+              </div>
+            </div>
+
+            <!-- API Request Volume Visualization -->
+            <div class="api-volume-section">
+              <!-- 60-Minute Tactical View -->
+              <div class="api-chart-group">
+                <div class="api-chart-header">
+                  <span class="api-chart-title">Last 60 Minutes</span>
+                  <span class="api-chart-subtext" id="minutePeakLabel">Peak: 0 req/m</span>
+                </div>
+                <div class="api-chart-container api-minute-chart" id="apiMinuteChart" role="img" aria-label="API request volume for the last 60 minutes">
+                  <!-- 60 thin columns rendered dynamically -->
+                </div>
+              </div>
+
+              <!-- 24-Hour Macro View -->
+              <div class="api-chart-group">
+                <div class="api-chart-header">
+                  <span class="api-chart-title">Last 24 Hours</span>
+                  <span class="api-chart-subtext" id="hourPeakLabel">Peak: 0 req/h</span>
+                </div>
+                <div class="api-chart-container api-hour-chart" id="apiHourChart" role="img" aria-label="API request volume for the last 24 hours">
+                  <!-- 24 wider columns rendered dynamically -->
+                </div>
+              </div>
+            </div>
+
+            <div class="diag-actions-row">
+              <button type="button" id="copyApiLogBtn" class="copy-api-log-btn" title="Copy recent API audit log (JSON) to clipboard">
+                <svg class="copy-log-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span id="copyApiLogText">Copy Audit Log</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Section 3: Gameplay & Media Provider Setup (Hidden until one-click review/gameplay search is implemented) -->
+        <section id="mediaProviderSection" class="settings-section hidden" style="display: none;">
+          <div class="settings-section-header">
+            <svg class="settings-section-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <h2 class="settings-section-title">Gameplay & Media Provider</h2>
+          </div>
+          <p class="settings-section-desc">Define your preferred search engine for game reviews and gameplay footage.</p>
+
+          <div class="settings-field-group">
+            <label for="mediaProviderUrl" class="settings-label">Media Search URL</label>
+            <input type="text" id="mediaProviderUrl" class="settings-input"
+              placeholder="https://www.youtube.com/results?search_query=" autocomplete="off" spellcheck="false">
+            
+            <div class="preset-chips-row">
+              <span class="preset-chips-label">Presets:</span>
+              <button type="button" class="preset-chip-btn" data-url="https://www.youtube.com/results?search_query=">YouTube</button>
+              <button type="button" class="preset-chip-btn" data-url="https://www.twitch.tv/search?term=">Twitch</button>
+              <button type="button" class="preset-chip-btn" data-url="https://www.google.com/search?q=">Google</button>
+            </div>
+            <p class="settings-hint">Game titles will be automatically formatted into this query URL.</p>
+          </div>
+        </section>
+
+        <!-- Section 4: Data Management & Catalog Cache -->
+        <section class="settings-section">
+          <div class="settings-section-header">
+            <svg class="settings-section-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <h2 class="settings-section-title">Data Management & Catalog Cache</h2>
+          </div>
+          <p class="settings-section-desc">View cached store entries or export/import your games catalog backup.</p>
+
+          <!-- Stored Database Live Summary -->
+          <div class="settings-catalog-card" id="settingsCatalogStats">
+            <div class="catalog-card-header">
+              <span class="catalog-card-title">Stored Games Database</span>
+              <span class="catalog-card-badge" id="catalogCardTotal">0 games</span>
+            </div>
+            <div class="catalog-card-breakdown" id="catalogCardBreakdown">
+              <div class="catalog-stat-chip chip-untouched" title="Games marked as untouched speedruns">
+                <span class="chip-dot dot-untouched"></span>
+                <span class="chip-label">Untouched</span>
+                <span class="chip-count" id="statUntouchedCount">0</span>
+              </div>
+              <div class="catalog-stat-chip chip-has-runs" title="Games with active speedrun leaderboards">
+                <span class="chip-dot dot-has-runs"></span>
+                <span class="chip-label">Active Runs</span>
+                <span class="chip-count" id="statHasRunsCount">0</span>
+              </div>
+              <div class="catalog-stat-chip chip-unverified" title="Games scouted with no speedruns found">
+                <span class="chip-dot dot-unverified"></span>
+                <span class="chip-label">Unverified</span>
+                <span class="chip-count" id="statUnverifiedCount">0</span>
+              </div>
+              <div class="catalog-stat-chip chip-saved" title="Saved bookmarked games">
+                <span class="chip-dot dot-saved"></span>
+                <span class="chip-label">Saved</span>
+                <span class="chip-count" id="statSavedCount">0</span>
+              </div>
+              <div class="catalog-stat-chip chip-hidden" title="Concealed / Hidden games">
+                <span class="chip-dot dot-hidden"></span>
+                <span class="chip-label">Hidden</span>
+                <span class="chip-count" id="statHiddenCount">0</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-backup-row">
+            <button type="button" id="exportBackupBtn" class="settings-backup-btn" title="Export backup to JSON">
+              <svg class="backup-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <span>Export Backup</span>
+            </button>
+            <button type="button" id="importBackupBtn" class="settings-backup-btn" title="Import backup from JSON">
+              <svg class="backup-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+              <span>Import Backup</span>
+            </button>
+            <input type="file" id="importFile" accept=".json" style="display: none;">
+          </div>
+        </section>
+
+        <!-- Settings Footer / Dynamic Version Info -->
+        <div class="settings-footer">
+          <span class="settings-app-name">PS Store Scout</span>
+          <span id="settingsVersionBadge" class="settings-version-badge"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="sidebar.js"></script>
+</body>
+
+</html>

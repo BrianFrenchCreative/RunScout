@@ -1,0 +1,18 @@
+{
+  "name": "ps-store-scout",
+  "version": "1.2.9",
+  "description": "Scout PlayStation Store games against Speedrun.com leaderboards, discover untouched speedruns, and customize your catalog.",
+  "scripts": {
+    "bump": "node bump.js",
+    "bump:patch": "node bump.js patch",
+    "bump:minor": "node bump.js minor",
+    "bump:major": "node bump.js major"
+  },
+  "keywords": [
+    "playstation-store",
+    "speedrun",
+    "chrome-extension"
+  ],
+  "author": "",
+  "license": "MIT"
+}
